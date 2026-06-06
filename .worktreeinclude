@@ -1,0 +1,3 @@
+# Gitignored files copied into every new Conductor workspace.
+# Keeps API keys available to each parallel agent without manual setup.
+.env.local
