@@ -1,5 +1,6 @@
 import type { SourceModule } from "@/lib/types";
 import { youtubeSource } from "@/lib/sources/youtube";
+import { xSource } from "@/lib/sources/x";
 import { hnSource } from "@/lib/sources/hn";
 import { redditSource } from "@/lib/sources/reddit";
 
@@ -15,9 +16,9 @@ import { redditSource } from "@/lib/sources/reddit";
  */
 export const SOURCES: SourceModule[] = [
   youtubeSource,
+  xSource,
   hnSource,
   redditSource,
-  // xSource,
 ];
 
 /** Sources that can actually run right now (required keys present, etc.). */
