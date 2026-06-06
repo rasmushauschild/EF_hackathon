@@ -29,6 +29,9 @@ How it works (per request, `POST /api/feed`):
    - `ANTHROPIC_API_KEY` — from the Anthropic Console. Used for planning + ranking.
    - `YOUTUBE_API_KEY` — Google Cloud → APIs & Services → Credentials → API key, with
      **"YouTube Data API v3"** enabled. Free; ~100 searches/day.
+   - `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` — enable the Reddit source. Create a
+     free app at [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps); we use
+     app-only OAuth (anonymous `*.json` access is now blocked). Leave unset to skip Reddit.
    - Optional: `PLAN_MODEL` / `RANK_MODEL` (default `claude-opus-4-8`; set to
      `claude-sonnet-4-6` or `claude-haiku-4-5` for a faster/cheaper feed).
 3. **Run:**
@@ -64,6 +67,6 @@ That's it — `planQueries` auto-generates queries for it (only while `enabled()
 `runSources` fetches it, and a badge style already exists in `app/page.tsx` for all four
 source ids.
 
-Planned, in order: **Hacker News** (Algolia `search_by_date`, no auth) →
-**Reddit** (public `*.json` search) → **X/Twitter** (`/2/tweets/search/recent`,
-pay-per-use Bearer token — start the dev-account signup early).
+Shipped: **YouTube**, **Reddit** (app-only OAuth `search`). Planned, in order:
+**Hacker News** (Algolia `search_by_date`, no auth) → **X/Twitter**
+(`/2/tweets/search/recent`, pay-per-use Bearer token — start the dev-account signup early).

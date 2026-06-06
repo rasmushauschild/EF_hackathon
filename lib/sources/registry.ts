@@ -1,5 +1,6 @@
 import type { SourceModule } from "@/lib/types";
 import { youtubeSource } from "@/lib/sources/youtube";
+import { redditSource } from "@/lib/sources/reddit";
 
 /**
  * The list of pluggable sources.
@@ -13,8 +14,8 @@ import { youtubeSource } from "@/lib/sources/youtube";
  */
 export const SOURCES: SourceModule[] = [
   youtubeSource,
+  redditSource,
   // hnSource,
-  // redditSource,
   // xSource,
 ];
 
