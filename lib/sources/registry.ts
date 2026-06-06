@@ -1,6 +1,8 @@
 import type { SourceModule } from "@/lib/types";
 import { youtubeSource } from "@/lib/sources/youtube";
 import { xSource } from "@/lib/sources/x";
+import { hnSource } from "@/lib/sources/hn";
+import { redditSource } from "@/lib/sources/reddit";
 
 /**
  * The list of pluggable sources.
@@ -15,8 +17,8 @@ import { xSource } from "@/lib/sources/x";
 export const SOURCES: SourceModule[] = [
   youtubeSource,
   xSource,
-  // hnSource,
-  // redditSource,
+  hnSource,
+  redditSource,
 ];
 
 /** Sources that can actually run right now (required keys present, etc.). */
