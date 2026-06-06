@@ -26,10 +26,8 @@ export interface FeedPlan {
   refinedInterest: string;
   /** What makes a post a strong match — fed to the ranking step. */
   rubric: string;
-  youtube: string[];
-  hn: string[];
-  reddit: { subreddits: string[]; queries: string[] };
-  x: string[];
+  /** Search queries keyed by source id. Only active sources are present. */
+  queries: Partial<Record<Source, string[]>>;
 }
 
 /** A feed item enriched with the agent's relevance judgement. */
@@ -71,4 +69,21 @@ export interface SearchOpts {
   /** ISO 8601 lower bound on publish time. */
   publishedAfter: string;
   maxResultsPerQuery: number;
+}
+
+/**
+ * A pluggable source. To add a source: create `lib/sources/<id>.ts` exporting a
+ * SourceModule, then add it to the SOURCES array in `lib/sources/registry.ts`.
+ * Nothing else needs editing — planning and ranking adapt automatically.
+ */
+export interface SourceModule {
+  id: Source;
+  /** Human label for badges/warnings. */
+  label: string;
+  /** Instruction the planner uses to generate this source's search queries. */
+  planHint: string;
+  /** Whether this source can run right now (e.g. a required key is present). */
+  enabled: () => boolean;
+  /** Run the source's search for the given queries. Throw on hard errors. */
+  search: (queries: string[], opts: SearchOpts) => Promise<FeedItem[]>;
 }

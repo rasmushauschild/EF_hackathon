@@ -1,7 +1,17 @@
-import type { FeedItem, SearchOpts } from "@/lib/types";
+import type { FeedItem, SearchOpts, SourceModule } from "@/lib/types";
 
 const SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 const VIDEOS_URL = "https://www.googleapis.com/youtube/v3/videos";
+
+/** Registry entry — see lib/sources/registry.ts. */
+export const youtubeSource: SourceModule = {
+  id: "youtube",
+  label: "YouTube",
+  planHint:
+    "3-5 search query strings tuned for YouTube (keywords people use in video titles; no boolean operators).",
+  enabled: () => !!process.env.YOUTUBE_API_KEY,
+  search: (queries, opts) => searchYouTube(queries, opts),
+};
 
 /** Decode the HTML entities YouTube returns in titles/descriptions (e.g. &amp;, &#39;). */
 function decodeEntities(s: string): string {

@@ -48,13 +48,21 @@ How it works (per request, `POST /api/feed`):
 
 ## Roadmap — adding a source
 
-Each source is a `search(queries, opts) => Promise<FeedItem[]>` function registered in
-`lib/sources/index.ts`. To add one:
+Sources are pluggable `SourceModule`s (see `lib/types.ts`). The planner, fetcher, and
+ranker all iterate the registry, so adding a source touches **only two files** — its own
+new file, plus one line in the registry. This keeps parallel "add a source" work in
+separate Conductor workspaces near conflict-free.
 
-1. Create `lib/sources/<name>.ts` returning normalized `FeedItem`s (throw on hard errors).
-2. Register it in `runSources()` behind its slice of the plan.
-3. Add its query fields to the `emit_plan` tool schema in `lib/agent.ts` (already present
-   for `hn`, `reddit`, `x`) and a badge style in `app/page.tsx`.
+To add one:
+
+1. Create `lib/sources/<id>.ts` exporting a `SourceModule` (`id`, `label`, `planHint`,
+   `enabled`, `search`). Follow `lib/sources/youtube.ts`; `search` returns normalized
+   `FeedItem`s and throws on hard errors.
+2. Add it to the `SOURCES` array in `lib/sources/registry.ts`.
+
+That's it — `planQueries` auto-generates queries for it (only while `enabled()` is true),
+`runSources` fetches it, and a badge style already exists in `app/page.tsx` for all four
+source ids.
 
 Planned, in order: **Hacker News** (Algolia `search_by_date`, no auth) →
 **Reddit** (public `*.json` search) → **X/Twitter** (`/2/tweets/search/recent`,

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { FeedItem, FeedPlan, RankedItem, WhyRow } from "@/lib/types";
+import { activeSources } from "@/lib/sources/registry";
 
 // Haiku by default for a fast, interactive feed. Bump to claude-sonnet-4-6 or
 // claude-opus-4-8 via env if you want higher-quality planning/ranking.
@@ -26,15 +27,6 @@ function toolInput<T>(message: Anthropic.Message, toolName: string): T {
   return block.input as T;
 }
 
-const PLAN_SYSTEM = `You turn a person's described interest into effective YouTube search queries for finding RECENT videos, plus a rubric for judging relevance.
-
-Given the user's interest, produce:
-- refinedInterest: a one-sentence restatement of what they actually want to see.
-- rubric: 1-2 sentences describing what makes a video a STRONG match vs a weak one. Be specific about topics and quality signals. This is used to score results later.
-- youtube: 3-5 search query strings tuned for YouTube (keywords people use in titles; no boolean operators).
-
-Favor precision over breadth. Avoid overly generic queries that would return noise. Keep the rubric tight.`;
-
 const SCORE_SYSTEM = `You score candidate posts by how well they match a person's interest.
 
 You are given the interest, a rubric, and a JSON array of candidates, each with an integer index "i". For EVERY candidate, output:
@@ -54,27 +46,56 @@ interface ScoreRow {
   score: number;
 }
 
-/** Expand a free-text interest into per-source search queries + a relevance rubric. */
+/**
+ * Expand a free-text interest into per-source search queries + a relevance rubric.
+ *
+ * The query schema and prompt are built from the *active* sources in the registry,
+ * so the planner only generates queries for sources that can actually run (which
+ * keeps the call fast) and automatically covers any new source that's added.
+ */
 export async function planQueries(prompt: string): Promise<FeedPlan> {
+  const active = activeSources();
+  const platformLines = active.map((s) => `- ${s.id}: ${s.planHint}`).join("\n");
+  const system = `You turn a person's described interest into effective search queries for finding RECENT posts, plus a rubric for judging relevance.
+
+Produce:
+- refinedInterest: a one-sentence restatement of what they actually want to see.
+- rubric: 1-2 sentences describing what makes a post a STRONG match vs a weak one. Be specific about topics and quality signals. Used to score results later — keep it tight.
+- queries: for each platform below, the requested search query strings.
+
+Platforms:
+${platformLines}
+
+Favor precision over breadth. Avoid overly generic queries that would return noise.`;
+
+  const queryProps = Object.fromEntries(
+    active.map((s) => [s.id, { type: "array", items: { type: "string" } }]),
+  );
+
   const message = await client().messages.create({
     model: PLAN_MODEL,
     max_tokens: 2048,
     thinking: { type: "disabled" },
-    system: [{ type: "text", text: PLAN_SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
     tool_choice: { type: "tool", name: "emit_plan" },
     tools: [
       {
         name: "emit_plan",
-        description: "Return the YouTube search plan and relevance rubric.",
+        description: "Return per-platform search queries and a relevance rubric.",
         input_schema: {
           type: "object",
           additionalProperties: false,
           properties: {
             refinedInterest: { type: "string" },
             rubric: { type: "string" },
-            youtube: { type: "array", items: { type: "string" } },
+            queries: {
+              type: "object",
+              additionalProperties: false,
+              properties: queryProps,
+              required: active.map((s) => s.id),
+            },
           },
-          required: ["refinedInterest", "rubric", "youtube"],
+          required: ["refinedInterest", "rubric", "queries"],
         },
       },
     ],
@@ -86,12 +107,7 @@ export async function planQueries(prompt: string): Promise<FeedPlan> {
     ],
   });
 
-  const core = toolInput<{ refinedInterest: string; rubric: string; youtube: string[] }>(
-    message,
-    "emit_plan",
-  );
-  // Other sources are stubbed empty until their clients land (see lib/sources).
-  return { ...core, hn: [], reddit: { subreddits: [], queries: [] }, x: [] };
+  return toolInput<FeedPlan>(message, "emit_plan");
 }
 
 /**
