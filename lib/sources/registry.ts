@@ -1,5 +1,6 @@
 import type { SourceModule } from "@/lib/types";
 import { youtubeSource } from "@/lib/sources/youtube";
+import { hnSource } from "@/lib/sources/hn";
 import { redditSource } from "@/lib/sources/reddit";
 
 /**
@@ -14,8 +15,8 @@ import { redditSource } from "@/lib/sources/reddit";
  */
 export const SOURCES: SourceModule[] = [
   youtubeSource,
+  hnSource,
   redditSource,
-  // hnSource,
   // xSource,
 ];
 
